@@ -47,32 +47,81 @@
 		selectPrevTabbableOrFocusable(':tabbable');
 	};
 
+	function tabIndexToInt(tabIndex){
+		var tabIndexInded = parseInt(tabIndex);
+		if(isNaN(tabIndexInded)){
+		    return 0;
+		}else{
+		    return tabIndexInded;
+		}
+	}
+
+	function getTabIndexList(elements){
+		var list = [];
+		for(var i=0; i<elements.length; i++){
+		    list.push(tabIndexToInt(elements.eq(i).attr("tabIndex")));
+		}
+		return list;
+	}
+	
 	function selectNextTabbableOrFocusable(selector){
 		var selectables = $(selector);
 		var current = $(':focus');
-		var nextIndex = 0;
-		if(current.length === 1){
-			var currentIndex = selectables.index(current);
-			if(currentIndex + 1 < selectables.length){
-				nextIndex = currentIndex + 1;
-			}
+		
+		// Find same TabIndex of remainder element
+		var currentIndex = selectables.index(current);
+		var currentTabIndex = tabIndexToInt(current.attr("tabIndex"));
+		for(var i=currentIndex+1; i<selectables.length; i++){
+		    if(tabIndexToInt(selectables.eq(i).attr("tabIndex")) === currentTabIndex){
+			selectables.eq(i).focus();
+			return;
+		    }
 		}
 
-		selectables.eq(nextIndex).focus();
+		// Check is last TabIndex
+		var tabIndexList = getTabIndexList(selectables).sort(function(a, b){return a-b});
+		if(currentTabIndex === tabIndexList[tabIndexList.length-1]){
+		    currentTabIndex = -1;// Starting from 0
+		}
+
+		// Find next TabIndex of all element
+		var nextTabIndex = tabIndexList.find(function(element){return currentTabIndex<element;});
+		for(var i=0; i<selectables.length; i++){
+		    if(tabIndexToInt(selectables.eq(i).attr("tabIndex")) === nextTabIndex){
+			selectables.eq(i).focus();
+			return;
+		    }
+		}
 	}
 
 	function selectPrevTabbableOrFocusable(selector){
 		var selectables = $(selector);
 		var current = $(':focus');
-		var prevIndex = selectables.length - 1;
-		if(current.length === 1){
-			var currentIndex = selectables.index(current);
-			if(currentIndex > 0){
-				prevIndex = currentIndex - 1;
-			}
+		
+		// Find same TabIndex of remainder element
+		var currentIndex = selectables.index(current);
+		var currentTabIndex = tabIndexToInt(current.attr("tabIndex"));
+		for(var i=currentIndex-1; 0<=i; i--){
+		    if(tabIndexToInt(selectables.eq(i).attr("tabIndex")) === currentTabIndex){
+			selectables.eq(i).focus();
+			return;
+		    }
 		}
 
-		selectables.eq(prevIndex).focus();
+		// Check is last TabIndex
+		var tabIndexList = getTabIndexList(selectables).sort(function(a, b){return b-a});
+		if(currentTabIndex <= tabIndexList[tabIndexList.length-1]){
+		    currentTabIndex = tabIndexList[0]+1;// Starting from max
+		}
+
+		// Find prev TabIndex of all element
+		var prevTabIndex = tabIndexList.find(function(element){return element<currentTabIndex;});
+		for(var i=selectables.length-1; 0<=i; i--){
+		    if(tabIndexToInt(selectables.eq(i).attr("tabIndex")) === prevTabIndex){
+			selectables.eq(i).focus();
+			return;
+		    }
+		}
 	}
 
 	/**
